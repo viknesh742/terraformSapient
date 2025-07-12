@@ -1,0 +1,18 @@
+pipeline {
+  agent any
+  stages {
+    stage('Terraform Init , Plan, Validation & Apply') {
+      steps {
+        sh '''cd terraform && terraform init
+        terraform plan
+        terraform validation
+        terraform apply -auto-approve'''
+      }
+    }
+    stage('Ansible Provisioning') {
+      steps {
+        sh 'ansible-playbook -i ansible/inventory.ini ansible/playbook.yaml'
+      }
+    }
+  }
+}

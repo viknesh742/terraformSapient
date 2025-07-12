@@ -1,0 +1,23 @@
+- name: Configure Web Server
+  hosts: web
+  become: yes
+  tasks:
+    - name: Install Apache
+      apt: name=apache2 state=present update_cache=true
+
+    - name: Change Apache port to 8080
+      lineinfile:
+        path: /etc/apache2/ports.conf
+        regexp: '^Listen 80'
+        line: 'Listen 8080'
+
+    - name: Update default site port
+      replace:
+        path: /etc/apache2/sites-available/000-default.conf
+        regexp: 'VirtualHost \*:80'
+        replace: 'VirtualHost *:8080'
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
