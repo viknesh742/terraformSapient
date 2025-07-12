@@ -1,8 +1,8 @@
 terraform {
   backend "s3" {
-    bucket         = "cf-templates-5vl2mzkujuwa-us-east-1"
-    key            = "terraform.tfstate"
+    bucket         = "backend-bucket"
+    key            = "dev.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "terraform"
+    dynamodb_table = "dynamodbTablename"
   }
 }

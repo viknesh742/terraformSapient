@@ -1,17 +1,46 @@
 pipeline {
   agent any
+
+  environment {
+    TF_VAR_key_pair_name = 'my-key-pair'
+    AWS_DEFAULT_REGION = 'us-east-1'
+  }
+
   stages {
-    stage('Terraform Init , Plan, Validation & Apply') {
+    stage('Terraform Apply') {
       steps {
-        sh '''cd terraform && terraform init
-        terraform plan
-        terraform validation
-        terraform apply -auto-approve'''
+        sh '''
+          cd terraform/
+          terraform init
+          terraform plan
+          terraform validation
+          terraform apply -auto-approve
+        '''
       }
     }
-    stage('Ansible Provisioning') {
+
+    stage('Generate Ansible Inventory') {
       steps {
-        sh 'ansible-playbook -i ansible/inventory.ini ansible/playbook.yaml'
+        script {
+          def publicIps = sh(script: "cd terraform && terraform output -json web_instance_public_ips", returnStdout: true).trim()
+          def ipList = readJSON text: publicIps
+
+          def inventory = "[webservers]\\n"
+          for (ip in ipList) {
+            inventory += "${ip} ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/my-key.pem\\n"
+          }
+
+          writeFile file: 'ansible/ansible.ini', text: inventory
+        }
+      }
+    }
+
+    stage('Run Ansible Playbook') {
+      steps {
+        sh '''
+          cd ansible/
+          ansible-playbook -i ansible.ini playbook.yml
+        '''
       }
     }
   }
